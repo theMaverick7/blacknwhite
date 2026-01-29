@@ -1,0 +1,34 @@
+{
+  "name": "blacknwhite",
+  "version": "1.0.0",
+  "description": "AI powered, self-deployed, document management system",
+  "keywords": [
+    "node",
+    "express",
+    "api",
+    "backend",
+    "javascript",
+    "postgres"
+  ],
+  "homepage": "https://github.com/theMaverick7/blacknwhite#readme",
+  "bugs": {
+    "url": "https://github.com/theMaverick7/blacknwhite/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/theMaverick7/blacknwhite.git"
+  },
+  "license": "ISC",
+  "author": "theMaverick7",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node src/index.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "pg": "^8.17.2"
+  }
+}
