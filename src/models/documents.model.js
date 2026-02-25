@@ -1,5 +1,6 @@
 import { pool } from '../index.js';
 import { randomUUID } from 'node:crypto';
+import { mimeTypes } from '../utils/mimetypes.js';
 
 export default class Document {
     constructor(userId) {
@@ -42,11 +43,29 @@ export default class Document {
 
     // Retrieve all documents for a specific user
 
-    async findAll() {
+    async findAll(filter) {
+        let queryMimeType;
         try {
-            const query = 'SELECT * FROM documents WHERE user_id = $1';
-            const res = await pool.query(query, [this.userId]);
+            // for all documents of a user
+            if (!filter) {
+                const query = 'SELECT * FROM documents WHERE user_id = $1';
+                const res = await pool.query(query, [this.userId]);
+                return res.rows;
+            }
+
+            if (filter && Object.keys(filter)[0] === 'type') {
+                for (const [key, value] of Object.entries(mimeTypes)) {
+                    if (key === filter.type) {
+                        queryMimeType = value;
+                    }
+                }
+            }
+
+            // for documents of a user with a specific file type
+            const query = 'SELECT * FROM documents WHERE user_id = $1 AND file_type = $2';
+            const res = await pool.query(query, [this.userId, queryMimeType]);
             return res.rows;
+
 
         } catch (error) {
             console.error(error);
@@ -58,8 +77,8 @@ export default class Document {
 
     async findById(id) {
         try {
-            const query = 'SELECT * FROM documents WHERE doc_id = $1';
-            const res = await pool.query(query, [id]);
+            const query = 'SELECT * FROM documents WHERE user_id = $1 AND doc_id = $2';
+            const res = await pool.query(query, [this.userId, id]);
             return res.rows[0];
 
         } catch (error) {

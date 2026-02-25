@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as documentController from '../../../controllers/documents.controller.js';
 import upload from '../../../utils/multer.js';
-import dbInterfaceMiddleware from '../../../middlwares/dbInterface.middleware.js';
+import dbInterfaceMiddleware from '../../../middlewares/dbInterface.middleware.js';
 
 const router = Router({ mergeParams: true });
 

@@ -40,9 +40,10 @@ export const Upload = async (req, res) => {
 }
 
 export const List = async (req, res) => {
+    const filter = req.query;
     const Document = req.dbInterface;
     try {
-        const documents = await Document.findAll();
+        const documents = await Document.findAll(filter || null);
         if (documents.length === 0) {
             return res.status(200).json({
                 message: 'No documents found for this user',
