@@ -1,6 +1,6 @@
 import { pool } from '../index.js';
 import { randomUUID } from 'node:crypto';
-import { mimeTypes } from '../utils/mimetypes.js';
+import { mimeTypes } from '../constants/mimetypes.js';
 
 export default class Document {
     constructor(userId) {

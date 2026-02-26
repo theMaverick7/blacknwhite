@@ -43,7 +43,7 @@ export const List = async (req, res) => {
     const filter = req.query;
     const Document = req.dbInterface;
     try {
-        const documents = await Document.findAll(filter || null);
+        const documents = await Document.findAll(Object.keys(filter).length > 0 ? filter : null);
         if (documents.length === 0) {
             return res.status(200).json({
                 message: 'No documents found for this user',
