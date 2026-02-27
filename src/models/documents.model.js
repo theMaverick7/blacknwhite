@@ -53,19 +53,53 @@ export default class Document {
                 return res.rows;
             }
 
+            // for documents of a user with a specific file type
             if (filter && Object.keys(filter)[0] === 'type') {
                 for (const [key, value] of Object.entries(mimeTypes)) {
                     if (key === filter.type) {
                         queryMimeType = value;
                     }
                 }
+                const query = 'SELECT * FROM documents WHERE user_id = $1 AND file_type = $2';
+                const res = await pool.query(query, [this.userId, queryMimeType]);
+                return res.rows;
             }
 
-            // for documents of a user with a specific file type
-            const query = 'SELECT * FROM documents WHERE user_id = $1 AND file_type = $2';
-            const res = await pool.query(query, [this.userId, queryMimeType]);
-            return res.rows;
+            // for documents of a user with a specific file_name
+            if (filter && Object.keys(filter)[0] === 'name') {
+                const query = 'SELECT * FROM documents WHERE user_id = $1 AND file_name = $2';
+                const res = await pool.query(query, [this.userId, filter.name]);
+                return res.rows;
+            }
 
+            // for documents of a user uploaded within a specific time frame
+            if (filter && Object.keys(filter)[0] === 'time') {
+                if (filter.time === 'today') {
+                    const query = `SELECT * FROM documents WHERE user_id = $1 AND DATE(upload_date) = CURRENT_DATE`;
+                    const res = await pool.query(query, [this.userId]);
+                    return res.rows;
+                }
+                if (filter.time === 'yesterday') {
+                    const query = `SELECT * FROM documents WHERE user_id = $1 AND DATE(upload_date) = CURRENT_DATE - INTERVAL '1 DAY'`;
+                    const res = await pool.query(query, [this.userId]);
+                    return res.rows;
+                }
+                if (filter.time === 'lastweek') {
+                    const query = `SELECT * FROM documents WHERE user_id = $1 AND upload_date >= CURRENT_DATE - INTERVAL '7 DAY'`;
+                    const res = await pool.query(query, [this.userId]);
+                    return res.rows;
+                }
+                if (filter.time === 'lastmonth') {
+                    const query = `SELECT * FROM documents WHERE user_id = $1 AND upload_date >= CURRENT_DATE - INTERVAL '1 MONTH'`;
+                    const res = await pool.query(query, [this.userId]);
+                    return res.rows;
+                }
+                if (filter.time === 'lastyear') {
+                    const query = `SELECT * FROM documents WHERE user_id = $1 AND upload_date >= CURRENT_DATE - INTERVAL '1 YEAR'`;
+                    const res = await pool.query(query, [this.userId]);
+                    return res.rows;
+                }
+            }
 
         } catch (error) {
             console.error(error);
