@@ -7,11 +7,19 @@ const router = Router({ mergeParams: true });
 // Create a new account
 router.post('/create', accountDbInterface, accountController.Create);
 
-// Retrieve an account by id
-router.get('/:account_id', accountDbInterface, accountController.GetById);
+router.route('/:account_id')
+    .get(accountDbInterface, accountController.GetById)
+    .delete(accountDbInterface, accountController.Delete);
 
 // Change password
-router.post('/:account_id/updatePassword', accountDbInterface, accountController.updatePassword);
+router.patch('/:account_id/updatePassword', accountDbInterface, accountController.updatePassword);
+
+// change email
+router.patch('/:account_id/updateEmail', accountDbInterface, accountController.updateEmail);
+
+// change username
+router.patch('/:account_id/updateUsername', accountDbInterface, accountController.updateUsername);
+
 
 
 export default router;

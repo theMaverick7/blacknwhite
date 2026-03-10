@@ -1,86 +1,110 @@
 import { hashPassword, comparePassword } from '../utils/bcrypt.js';
+import { dbTransaction } from '../utils/dbTransaction.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { apiResponse } from '../utils/apiResponse.js';
+import { apiError } from '../utils/apiError.js';
 
-export const Create = async (req, res) => {
+// This function handles account creation
+export const Create = asyncHandler(async (req, res,) => {
     const Account = req.dbInterface;
-    try {
-        const { username, email, password } = req.body;
-        const hashedPassword = await hashPassword(password);
-        const account = await Account.create({
-            username,
-            email,
-            hashedPassword
-        });
+    const { username, email, password } = req.body;
+    const hashedPassword = await hashPassword(password);
+    const account = await Account.create({
+        username,
+        email,
+        hashedPassword
+    });
 
-        res.status(201).json({
-            message: 'account created successfully',
-            data: {
-                "username": account.username,
-                "email": account.email,
-                "created_at": account.created_at
-            }
-        });
+    res.status(201).json(new apiResponse(
+        201,
+        {
+            "username": account.username,
+            "email": account.email,
+            "created": account.created_at.toString()
+        },
+        'Account created successfully'
+    ));
+});
 
-    } catch (error) {
-        console.error(error);
-        res.status(401).json({
-            message: 'Server error'
-        })
-    }
-};
-
-export const GetById = async (req, res) => {
+// This function retrieves account details by ID
+export const GetById = asyncHandler(async (req, res) => {
     const Account = req.dbInterface;
-    try {
-        const { account_id } = req.params;
-        const account = await Account.findById(account_id);
-        if (!account) {
-            return res.status(404).json({
-                message: 'Account not found'
-            });
-        }
+    const { account_id } = req.params;
+    const account = await Account.findById(account_id);
+    if (!account) throw new apiError(404, 'Account not found');
 
-        res.status(200).json({
-            message: 'ok',
-            data: {
-                "username": account.username,
-                "email": account.email,
-                "created_at": account.created_at.toString()
-            }
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            message: 'Server error'
-        });
-    }
-}
+    res.status(200).json(new apiResponse(
+        200,
+        {
+            "username": account.username,
+            "email": account.email,
+            "created": account.created_at.toString()
+        },
+        'ok'
+    ));
+});
 
-export const updatePassword = async (req, res) => {
+// This function updates the account password
+export const updatePassword = asyncHandler(async (req, res) => {
     const Account = req.dbInterface;
-    try {
+    await dbTransaction(async () => {
         const { currentPassword, newPassword } = req.body;
         const data = await Account.findById({ return: 'password_hash' });
         const isEqualPswd = await comparePassword(currentPassword, data.password_hash);
         if (!isEqualPswd) {
-            return res.status(401).json({
-                message: 'Current password is incorrect'
-            });
+            throw new apiError(400, 'Current password is incorrect');
         }
-
         const newHashedPassword = await hashPassword(newPassword);
-        Promise.all([
-            Account.update('password_hash', newHashedPassword),
-            Account.update('updated_at', 'now()')
-        ]);
+        await Account.update('password_hash', newHashedPassword);
+        await Account.update('updated_at', 'now()');
+    })
 
-        res.status(200).json({
-            message: 'Password changed successfully'
-        });
+    res.status(200).json(new apiResponse(
+        200,
+        null,
+        'Password changed successfully'
+    ));
+});
 
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            message: 'Server error'
-        });
-    }
-}
+// this function updates the account email
+export const updateEmail = asyncHandler(async (req, res) => {
+    const Account = req.dbInterface;
+    await dbTransaction(async () => {
+        const { newEmail } = req.body;
+        await Account.update('email', newEmail);
+        await Account.update('updated_at', 'now()');
+    })
+
+    res.status(200).json(new apiResponse(
+        200,
+        null,
+        'Email updated successfully'
+    ));
+});
+
+// this function updates the account username
+export const updateUsername = asyncHandler(async (req, res) => {
+    const Account = req.dbInterface;
+    await dbTransaction(async () => {
+        const { newUsername } = req.body;
+        await Account.update('username', newUsername);
+        await Account.update('updated_at', 'now()');
+    })
+
+    res.status(200).json(new apiResponse(
+        200,
+        null,
+        'Username updated successfully'
+    ));
+});
+
+// This function deletes an account
+export const Delete = asyncHandler(async (req, res) => {
+    const Account = req.dbInterface;
+    await Account.delete();
+    res.status(200).json(new apiResponse(
+        200,
+        null,
+        'Account deleted successfully'
+    ));
+});

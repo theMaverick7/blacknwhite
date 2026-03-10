@@ -45,4 +45,14 @@ export default class Account {
             throw new Error('Error updating account: ' + error.message);
         }
     }
+
+    // Delete an account
+    async delete() {
+        try {
+            const query = `DELETE FROM account WHERE account_id = $1`;
+            await pool.query(query, [this.userId]);
+        } catch (error) {
+            throw new Error('Error deleting account: ' + error.message);
+        }
+    }
 }

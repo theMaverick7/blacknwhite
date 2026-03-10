@@ -9,12 +9,28 @@ app.use(express.urlencoded({ extended: true }));
 // Parse JSON bodies (as sent by API clients)
 app.use(express.json());
 
-
-// app.use('/api/v1/blacknwhite', testRouter);
-// app.use('/api/v1/:user_id/documents', documentRouter);
-// app.use('/api/v1/account', accountRouter);
-
+// API v1
 app.use('/api/v1', apiv1Router);
 
+// log errors
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    next(err);
+});
+
+// error handler
+app.use((err, req, res, next) => {
+
+    if (!err.statusCode) {
+        res.status(500).json({
+            message: 'Internal Server Error'
+        });
+        return;
+    }
+
+    res.status(err.statusCode).json({
+        message: err.message || 'something went wrong'
+    });
+})
 
 export default app;

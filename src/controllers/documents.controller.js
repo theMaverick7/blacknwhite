@@ -1,6 +1,6 @@
 
 
-export const Upload = async (req, res) => {
+export const Upload = async (req, res, next) => {
     const Document = req.dbInterface;
 
     try {
@@ -33,13 +33,11 @@ export const Upload = async (req, res) => {
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({
-            message: 'Internal server error'
-        });
+        next(error);
     }
 }
 
-export const List = async (req, res) => {
+export const List = async (req, res, next) => {
     const filter = req.query;
     const Document = req.dbInterface;
     try {
@@ -65,13 +63,11 @@ export const List = async (req, res) => {
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({
-            message: 'Internal server error'
-        });
+        next(error);
     }
 }
 
-export const ListbyId = async (req, res) => {
+export const ListbyId = async (req, res, next) => {
     const Document = req.dbInterface;
     try {
         const { id } = req.params;
@@ -83,8 +79,6 @@ export const ListbyId = async (req, res) => {
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({
-            message: 'Internal server error'
-        });
+        next(error);
     }
 }
