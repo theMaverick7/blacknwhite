@@ -26,9 +26,15 @@ export default class Account {
     }
 
     // Retrieve an account by id
-    async findById({ return: [...valuestr] }) {
+    async findById(optionalArgs = {}) {
+
+        const {
+            RETURN = null
+            // more options
+        } = optionalArgs;
+
         try {
-            const query = `SELECT ${valuestr || '*'} FROM account WHERE account_id = $1`;
+            const query = `SELECT ${RETURN ? RETURN.join() : '*'} FROM account WHERE account_id = $1`;
             const res = await pool.query(query, [this.userId]);
             return res.rows[0];
         } catch (error) {
