@@ -79,15 +79,41 @@ export default class Document {
 
     // Retrieve a document by its ID
 
-    async findById(id) {
+    async findById(id, optionalArgs = {}) {
+
+        const {
+            RETURN = null
+            // more options
+        } = optionalArgs;
+
         try {
-            const query = 'SELECT * FROM documents WHERE user_id = $1 AND doc_id = $2';
+            const query = `SELECT ${RETURN ? RETURN.join() : '*'} FROM documents WHERE user_id = $1 AND doc_id = $2`;
             const res = await pool.query(query, [this.userId, id]);
             return res.rows[0];
 
         } catch (error) {
             console.error(error);
             throw new Error('Error finding document: ' + error.message);
+        }
+    }
+
+    // Update a document
+    async update(field, value, id) {
+        try {
+            const query = `UPDATE documents SET ${field} = $1 WHERE doc_id = $2 AND user_id = $3`;
+            await pool.query(query, [value, id, this.userId]);
+        } catch (error) {
+            throw new Error('Error updating account: ' + error.message);
+        }
+    }
+
+    // Delete a document
+    async delete(id) {
+        try {
+            const query = `${id ? 'DELETE FROM documents WHERE doc_id = $1 AND user_id = $2' : 'DELETE FROM documents WHERE user_id = $2'}`;
+            await pool.query(query, [id, this.userId]);
+        } catch (error) {
+            throw new Error('Error deleting document: ' + error.message);
         }
     }
 

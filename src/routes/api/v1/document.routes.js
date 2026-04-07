@@ -12,6 +12,12 @@ router.post('/upload', documentDbInterface, upload.array('file(s)'), documentCon
 router.get('/list', documentDbInterface, documentController.List);
 
 // List a specific file for a user
-router.get('/list/:id', documentDbInterface, documentController.ListbyId);
+router.get('/:id', documentDbInterface, documentController.ListbyId);
+
+// rename a document
+router.patch('/:id/rename', documentDbInterface, documentController.renameDocument);
+
+// delete a document
+router.delete('/:id/delete', documentDbInterface, documentController.deleteDocument)
 
 export default router;

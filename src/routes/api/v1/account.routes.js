@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as accountController from '../../../controllers/account.controller.js';
-import { accountDbInterface } from '../../../middlewares/dbInterface.middleware.js';
+import { accountDbInterface, documentDbInterface } from '../../../middlewares/dbInterface.middleware.js';
 
 const router = Router({ mergeParams: true });
 
@@ -19,7 +19,5 @@ router.patch('/:account_id/updateEmail', accountDbInterface, accountController.u
 
 // change username
 router.patch('/:account_id/updateUsername', accountDbInterface, accountController.updateUsername);
-
-
 
 export default router;

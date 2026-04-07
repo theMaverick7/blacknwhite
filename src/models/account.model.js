@@ -26,7 +26,7 @@ export default class Account {
     }
 
     // Retrieve an account by id
-    async findById({ 'return': valuestr }) {
+    async findById({ return: [...valuestr] }) {
         try {
             const query = `SELECT ${valuestr || '*'} FROM account WHERE account_id = $1`;
             const res = await pool.query(query, [this.userId]);

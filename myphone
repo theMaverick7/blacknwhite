@@ -1,0 +1,20 @@
+
+- Be more specific about problems
+- find more niche problems than a problem you can't even describe
+- Solving a problem involving multiple people will be hard
+- solve a problem that is recurring and cannot be avoided
+- solve a problem that is urgent and critical, top priority
+- washing machine is running but making a little noise - not urgent
+- refrigerator gone bad - urgent, important, critical - I can fix it later, but food will be spoiled and cost me more
+
+- Endcrawl is a SaaS that renders movie credits for film productions.
+- They are solving a critical problem (every movie needs credits), but not a mission-critical problem(rendering gets late, but the rest of the movie still goes on).
+- for example, when AWS breaks, economies shake.
+
+- Building the next AWS will be extremely difficult.
+- But we can solve important, critical, and urgent problems for Businesses already there.
+
+- Explore niche-specific communities and forums and look for complaints, people asking for help, and solution recommendations (free or paid)
+- Find problems in product reviews, even job listings.
+
+Alright, so i want to make a workflow or mindmap kind of thing for a SaaS idea. Basically the idea is to take youtube videos or from other sources and then, seperate the audio from that video. Next, create transcribe from that audio and according to that transcription, generate audio in another language. Next, according to that translated audio, generate lip sync for the video. Finally, link the audio with the video and render the video. Tools that will be used are: ffmpeg for downloading videos, moviepy for seperating and linking video/audio, elevanlabs to translate to another language, lip2sync for lips syncing

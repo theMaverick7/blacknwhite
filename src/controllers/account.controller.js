@@ -6,7 +6,7 @@ import { apiError } from '../utils/apiError.js';
 
 // This function handles account creation
 export const Create = asyncHandler(async (req, res,) => {
-    const Account = req.dbInterface;
+    const Account = req.accountDbInterface;
     const { username, email, password } = req.body;
     const hashedPassword = await hashPassword(password);
     const account = await Account.create({
@@ -28,9 +28,9 @@ export const Create = asyncHandler(async (req, res,) => {
 
 // This function retrieves account details by ID
 export const GetById = asyncHandler(async (req, res) => {
-    const Account = req.dbInterface;
-    const { account_id } = req.params;
-    const account = await Account.findById(account_id);
+    const Account = req.accountDbInterface;
+    const { user_id } = req.params;
+    const account = await Account.findById(user_id);
     if (!account) throw new apiError(404, 'Account not found');
 
     res.status(200).json(new apiResponse(
@@ -46,7 +46,7 @@ export const GetById = asyncHandler(async (req, res) => {
 
 // This function updates the account password
 export const updatePassword = asyncHandler(async (req, res) => {
-    const Account = req.dbInterface;
+    const Account = req.accountDbInterface;
     await dbTransaction(async () => {
         const { currentPassword, newPassword } = req.body;
         const data = await Account.findById({ return: 'password_hash' });
@@ -68,9 +68,10 @@ export const updatePassword = asyncHandler(async (req, res) => {
 
 // this function updates the account email
 export const updateEmail = asyncHandler(async (req, res) => {
-    const Account = req.dbInterface;
+    const Account = req.accountDbInterface;
     await dbTransaction(async () => {
         const { newEmail } = req.body;
+
         await Account.update('email', newEmail);
         await Account.update('updated_at', 'now()');
     })
@@ -84,7 +85,7 @@ export const updateEmail = asyncHandler(async (req, res) => {
 
 // this function updates the account username
 export const updateUsername = asyncHandler(async (req, res) => {
-    const Account = req.dbInterface;
+    const Account = req.accountDbInterface;
     await dbTransaction(async () => {
         const { newUsername } = req.body;
         await Account.update('username', newUsername);
@@ -100,8 +101,10 @@ export const updateUsername = asyncHandler(async (req, res) => {
 
 // This function deletes an account
 export const Delete = asyncHandler(async (req, res) => {
-    const Account = req.dbInterface;
-    await Account.delete();
+    const Account = req.accountDbInterface;
+    await dbTransaction(async () => {
+        await Account.delete();
+    })
     res.status(200).json(new apiResponse(
         200,
         null,
