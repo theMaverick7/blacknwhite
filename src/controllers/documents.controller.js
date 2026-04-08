@@ -64,7 +64,12 @@ export const ListbyId = asyncHandler(async (req, res) => {
         throw new apiError(404, 'Document not found');
     }
 
-    res.status(200).json(new apiResponse(200, document, 'Document retrieved successfully'));
+    res.status(200).json(new apiResponse(200, {
+        'filename': document.file_name,
+        'filetype': document.file_type,
+        'size(bytes)': document.file_size,
+        'upload_on': document.upload_date.toString()
+    }, 'Document retrieved successfully'));
 });
 
 // this function renames a document
