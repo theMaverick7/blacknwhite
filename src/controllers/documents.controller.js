@@ -3,6 +3,7 @@ import { apiResponse } from "../utils/apiResponse.js";
 import { apiError } from "../utils/apiError.js";
 import { rename, unlink } from 'node:fs';
 import { dbTransaction } from "../utils/dbTransaction.js";
+import { promise } from "bcrypt/promises.js";
 
 // This function handles document uploads and saves metadata to the database
 export const Upload = asyncHandler(async (req, res) => {
@@ -10,6 +11,15 @@ export const Upload = asyncHandler(async (req, res) => {
     console.log(req.files);
 
     const uploaded_files = req.files;
+
+    const duplicates = req.files.map(async (file) => {
+        console.log(file.filename);
+        return await Document.duplicateCheck(file.filename)
+    })
+
+    const dup = await Promise.all(duplicates);
+    if (duplicates.length !== 0) throw new apiError(400, 'document(s) with the same name already exists');
+
     const filesPromises = uploaded_files.map(async (file) => {
         return await Document.create({
             file_name: file.originalname,
@@ -39,8 +49,11 @@ export const Upload = asyncHandler(async (req, res) => {
 // This function lists all documents for a user
 export const List = asyncHandler(async (req, res) => {
     const Document = req.documentDbInterface;
-    const filter = req.query;
-    const documents = await Document.findAll(Object.keys(filter).length > 0 ? filter : null);
+    const filter = Object.keys(req.query).length > 0 ? req.query : null;
+
+    const documents = await Document.findAll(filter, {
+        RETURN: ['file_name', 'file_type', 'file_size', 'upload_date']
+    });
     if (documents.length === 0) {
         return res.status(200).json(new apiResponse(200, null, 'No documents found'));
     }

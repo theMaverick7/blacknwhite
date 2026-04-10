@@ -43,12 +43,16 @@ export default class Document {
 
     // Retrieve all documents for a specific user
 
-    async findAll(filter) {
+    async findAll(filter, optionalArgs = {}) {
         let queryMimeType;
+        const {
+            RETURN = null
+            // more options
+        } = optionalArgs;
         try {
             // for all documents of a user
             if (!filter) {
-                const query = 'SELECT * FROM documents WHERE user_id = $1';
+                const query = `SELECT ${RETURN ? RETURN.join() : '*'} FROM documents WHERE user_id = $1`;
                 const res = await pool.query(query, [this.userId]);
                 return res.rows;
             }
@@ -61,7 +65,6 @@ export default class Document {
                     }
                 }
             }
-
 
             const query = 'SELECT * FROM documents WHERE user_id = $1 AND file_type = $2';
             const res = await pool.query(query, [this.userId, queryMimeType]);
@@ -114,6 +117,16 @@ export default class Document {
             await pool.query(query, [id, this.userId]);
         } catch (error) {
             throw new Error('Error deleting document: ' + error.message);
+        }
+    }
+
+    async duplicateCheck(filename) {
+        try {
+            const query = `SELECT doc_id FROM documents WHERE file_name = $1 AND user_id = $2`;
+            const res = await pool.query(query, [filename, this.userId]);
+            return res.rows[0];
+        } catch (error) {
+            throw new Error(error);
         }
     }
 
