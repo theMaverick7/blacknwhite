@@ -111,10 +111,15 @@ export default class Document {
     }
 
     // Delete a document
-    async delete(id) {
+    async delete(id = null) {
         try {
-            const query = `${id ? 'DELETE FROM documents WHERE doc_id = $1 AND user_id = $2' : 'DELETE FROM documents WHERE user_id = $2'}`;
-            await pool.query(query, [id, this.userId]);
+            const query = `${id ? 'DELETE FROM documents WHERE user_id = $1 AND doc_id = $2 RETURNING storage_path' : 'DELETE FROM documents WHERE user_id = $1 RETURNING storage_path'}`;
+            if (!id) {
+                const res = await pool.query(query, [this.userId]);
+                return res.rows;
+            }
+            const res = await pool.query(query, [this.userId, id]);
+            return res.rows;
         } catch (error) {
             throw new Error('Error deleting document: ' + error.message);
         }

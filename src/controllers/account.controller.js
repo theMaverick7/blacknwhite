@@ -3,11 +3,16 @@ import { dbTransaction } from '../utils/dbTransaction.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { apiResponse } from '../utils/apiResponse.js';
 import { apiError } from '../utils/apiError.js';
+import { unlink } from 'node:fs';
 
 // This function handles account creation
 export const Create = asyncHandler(async (req, res,) => {
     const Account = req.accountDbInterface;
     const { username, email, password } = req.body;
+
+    const val = await Account.duplicateCheck(username);
+    if (val) throw new apiError(400, 'Username already exists');
+
     const hashedPassword = await hashPassword(password);
     const account = await Account.create({
         username,
@@ -102,9 +107,17 @@ export const updateUsername = asyncHandler(async (req, res) => {
 // This function deletes an account
 export const Delete = asyncHandler(async (req, res) => {
     const Account = req.accountDbInterface;
+
     await dbTransaction(async () => {
-        await Account.delete();
+        const paths = await Account.delete();
+        await Promise.all(paths.map(async (path) => {
+            unlink(path.storage_path, (err) => {
+                if (err) throw err;
+                console.log('File deleted');
+            })
+        }))
     })
+
     res.status(200).json(new apiResponse(
         200,
         null,

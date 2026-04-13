@@ -55,10 +55,23 @@ export default class Account {
     // Delete an account
     async delete() {
         try {
-            const query = `DELETE FROM account WHERE account_id = $1`;
-            await pool.query(query, [this.userId]);
+            const query = `WITH deleted_account AS (DELETE FROM account WHERE account_id = $1 RETURNING account_id)  
+                        DELETE FROM documents WHERE user_id IN (SELECT account_id FROM deleted_account) RETURNING storage_path`;
+            const res = await pool.query(query, [this.userId]);
+            return res.rows;
         } catch (error) {
             throw new Error('Error deleting account: ' + error.message);
         }
     }
+
+    async duplicateCheck(username) {
+        try {
+            const query = `SELECT account_id FROM account WHERE username = $1`;
+            const res = await pool.query(query, [username]);
+            return res.rows[0];
+        } catch (error) {
+            throw new Error(error);
+        }
+    }
+
 }

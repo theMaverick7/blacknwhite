@@ -3,24 +3,25 @@ import { apiResponse } from "../utils/apiResponse.js";
 import { apiError } from "../utils/apiError.js";
 import { rename, unlink } from 'node:fs';
 import { dbTransaction } from "../utils/dbTransaction.js";
-import { promise } from "bcrypt/promises.js";
 
 // This function handles document uploads and saves metadata to the database
 export const Upload = asyncHandler(async (req, res) => {
     const Document = req.documentDbInterface;
     console.log(req.files);
+    const duplicates = [];
 
-    const uploaded_files = req.files;
+    await Promise.all(req.files.map(async (file) => {
+        const val = await Document.duplicateCheck(file.filename);
+        if (val) {
+            duplicates.push(val);
+        }
+    }));
 
-    const duplicates = req.files.map(async (file) => {
-        console.log(file.filename);
-        return await Document.duplicateCheck(file.filename)
-    })
+    console.log(duplicates);
 
-    const dup = await Promise.all(duplicates);
     if (duplicates.length !== 0) throw new apiError(400, 'document(s) with the same name already exists');
 
-    const filesPromises = uploaded_files.map(async (file) => {
+    const filesPromises = req.files.map(async (file) => {
         return await Document.create({
             file_name: file.originalname,
             file_type: file.mimetype,
@@ -117,9 +118,9 @@ export const deleteDocument = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
     await dbTransaction(async () => {
-        const { storage_path } = await Document.findById(id, { RETURN: ['storage_path'] });
-        await Document.delete(id);
-        unlink(storage_path, (err) => {
+        const rows = await Document.delete(id);
+        const path = rows[0].storage_path;
+        unlink(path, (err) => {
             if (err) throw err;
             console.log('File deleted');
         })

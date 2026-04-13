@@ -9,7 +9,7 @@ router.post('/create', accountDbInterface, accountController.Create);
 
 router.route('/:account_id')
     .get(accountDbInterface, accountController.GetById)
-    .delete(accountDbInterface, accountController.Delete);
+    .delete(accountDbInterface, documentDbInterface, accountController.Delete);
 
 // Change password
 router.patch('/:account_id/updatePassword', accountDbInterface, accountController.updatePassword);
