@@ -1,7 +1,11 @@
 import express from "express";
 import apiv1Router from './routes/api/v1/index.js';
+import cors from 'cors';
 
 const app = express();
+
+// CORS
+app.use(cors());
 
 // Parse URL-encoded bodies (as sent by HTML forms)
 app.use(express.urlencoded({ extended: true }));

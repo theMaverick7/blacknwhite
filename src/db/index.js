@@ -1,36 +1,35 @@
 import dotenv from 'dotenv';
-import { Pool } from 'pg';
+import { Sequelize } from 'sequelize';
 
-// load environment variables
 dotenv.config();
 
-const config = {
-    user: process.env.DB_USERNAME, // database user
-    password: process.env.DB_PSWD, // database password
-    host: process.env.DB_HOST,     // database host
-    port: process.env.DB_PORT,     // database port
-    database: process.env.DB_NAME, // database name
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
-    maxLifetimeSeconds: 60
-};
+const sequelize = new Sequelize(
+    process.env.DB_NAME,
+    process.env.DB_USERNAME,
+    process.env.DB_PSWD,
+    {
+        host: process.env.DB_HOST,
+        port: process.env.DB_PORT,
+        dialect: 'postgres',
+        pool: {
+            max: 20,
+            idle: 30000,
+            acquire: 2000,
+            evict: 60000
+        },
+        logging: false
+    }
+);
 
-
-
-
-
-// this function connects to postgresql server
-const db_Connection = async() => {
-    const pool = new Pool(config);
+export const checkDBConnection = async() => {
     try {
-        await pool.query('SELECT NOW()'); // Test the connection
-        console.log('Connected to the database successfully');
-        return pool;
+        await sequelize.authenticate();
+        console.log('Database connection has been established successfully.');
+        await sequelize.sync();
+        console.log('Database & tables created!');
     } catch (error) {
-        pool.end(); // Close the pool if connection fails
-        throw new Error('Error connecting to the database: ' + error.message);
+        console.error('Unable to connect to the database:', error);
     }
 }
 
-export default db_Connection
+export default sequelize;

@@ -1,126 +1,107 @@
 import { hashPassword, comparePassword } from '../utils/bcrypt.js';
-import { dbTransaction } from '../utils/dbTransaction.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { apiResponse } from '../utils/apiResponse.js';
 import { apiError } from '../utils/apiError.js';
-import { unlink } from 'node:fs';
+import { unlink } from 'node:fs/promises';
+import { dbTransaction } from '../utils/dbTransaction.js';
+import Account from '../db/models/account.model.js';
+import Document from '../db/models/documents.model.js';
 
-// This function handles account creation
-export const Create = asyncHandler(async (req, res,) => {
-    const Account = req.accountDbInterface;
+export const Create = asyncHandler(async (req, res) => {
     const { username, email, password } = req.body;
 
-    const val = await Account.duplicateCheck(username);
-    if (val) throw new apiError(400, 'Username already exists');
+    const existing = await Account.findOne({ where: { username } });
+    if (existing) throw new apiError(400, 'Username already exists');
 
     const hashedPassword = await hashPassword(password);
-    const account = await Account.create({
-        username,
-        email,
-        hashedPassword
-    });
+    const account = await Account.create({ username, email, password_hash: hashedPassword });
 
     res.status(201).json(new apiResponse(
         201,
         {
-            "username": account.username,
-            "email": account.email,
-            "created": account.created_at.toString()
+            username: account.username,
+            email: account.email,
+            created: account.created_at.toString()
         },
         'Account created successfully'
     ));
 });
 
-// This function retrieves account details by ID
 export const GetById = asyncHandler(async (req, res) => {
-    const Account = req.accountDbInterface;
-    const { user_id } = req.params;
-    const account = await Account.findById(user_id);
+    const { account_id } = req.params;
+    const account = await Account.findByPk(account_id);
     if (!account) throw new apiError(404, 'Account not found');
 
     res.status(200).json(new apiResponse(
         200,
         {
-            "username": account.username,
-            "email": account.email,
-            "created": account.created_at.toString()
+            username: account.username,
+            email: account.email,
+            created: account.created_at.toString()
         },
         'ok'
     ));
 });
 
-// This function updates the account password
 export const updatePassword = asyncHandler(async (req, res) => {
-    const Account = req.accountDbInterface;
-    await dbTransaction(async () => {
-        const { currentPassword, newPassword } = req.body;
-        const data = await Account.findById({ return: 'password_hash' });
-        const isEqualPswd = await comparePassword(currentPassword, data.password_hash);
-        if (!isEqualPswd) {
-            throw new apiError(400, 'Current password is incorrect');
-        }
-        const newHashedPassword = await hashPassword(newPassword);
-        await Account.update('password_hash', newHashedPassword);
-        await Account.update('updated_at', 'now()');
-    })
+    const { account_id } = req.params;
+    const { currentPassword, newPassword } = req.body;
 
-    res.status(200).json(new apiResponse(
-        200,
-        null,
-        'Password changed successfully'
-    ));
+    await dbTransaction(async (t) => {
+        const account = await Account.findByPk(account_id, {
+            attributes: ['account_id', 'password_hash'],
+            transaction: t
+        });
+        if (!account) throw new apiError(404, 'Account not found');
+
+        const isMatch = await comparePassword(currentPassword, account.password_hash);
+        if (!isMatch) throw new apiError(400, 'Current password is incorrect');
+
+        await account.update({ password_hash: await hashPassword(newPassword) }, { transaction: t });
+    });
+
+    res.status(200).json(new apiResponse(200, null, 'Password changed successfully'));
 });
 
-// this function updates the account email
 export const updateEmail = asyncHandler(async (req, res) => {
-    const Account = req.accountDbInterface;
-    await dbTransaction(async () => {
-        const { newEmail } = req.body;
+    const { account_id } = req.params;
+    const { newEmail } = req.body;
 
-        await Account.update('email', newEmail);
-        await Account.update('updated_at', 'now()');
-    })
+    const [rows] = await Account.update({ email: newEmail }, { where: { account_id } });
+    if (rows === 0) throw new apiError(404, 'Account not found');
 
-    res.status(200).json(new apiResponse(
-        200,
-        null,
-        'Email updated successfully'
-    ));
+    res.status(200).json(new apiResponse(200, null, 'Email updated successfully'));
 });
 
-// this function updates the account username
 export const updateUsername = asyncHandler(async (req, res) => {
-    const Account = req.accountDbInterface;
-    await dbTransaction(async () => {
-        const { newUsername } = req.body;
-        await Account.update('username', newUsername);
-        await Account.update('updated_at', 'now()');
-    })
+    const { account_id } = req.params;
+    const { newUsername } = req.body;
 
-    res.status(200).json(new apiResponse(
-        200,
-        null,
-        'Username updated successfully'
-    ));
+    const [rows] = await Account.update({ username: newUsername }, { where: { account_id } });
+    if (rows === 0) throw new apiError(404, 'Account not found');
+
+    res.status(200).json(new apiResponse(200, null, 'Username updated successfully'));
 });
 
-// This function deletes an account
 export const Delete = asyncHandler(async (req, res) => {
-    const Account = req.accountDbInterface;
+    const { account_id } = req.params;
 
-    await dbTransaction(async () => {
-        const paths = await Account.delete();
-        await Promise.all(paths.map(async (path) => {
-            unlink(path.storage_path, (err) => {
-                if (err) throw err;
-                console.log('File deleted');
-            })
-        }))
-    })
+    let storagePaths;
+    await dbTransaction(async (t) => {
+        const account = await Account.findByPk(account_id, { transaction: t });
+        if (!account) throw new apiError(404, 'Account not found');
 
-    res.status(200).json(new apiResponse(
-        200,
-        null,
-        'Account deleted successfully'
-    ));
+        const documents = await Document.findAll({
+            where: { user_id: account_id },
+            attributes: ['storage_path'],
+            transaction: t
+        });
+        storagePaths = documents.map(d => d.storage_path);
+
+        await account.destroy({ transaction: t });
+    });
+
+    await Promise.all(storagePaths.map(p => unlink(p).catch(() => {})));
+
+    res.status(200).json(new apiResponse(200, null, 'Account deleted successfully'));
 });

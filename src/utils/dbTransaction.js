@@ -1,11 +1,11 @@
-import { pool } from '../index.js';
+import sequelize from '../db/index.js';
+import { apiError } from './apiError.js';
 
 export const dbTransaction = async (fn) => {
-    await pool.query('BEGIN');
-    await fn().catch(async (error) => {
-        await pool.query('ROLLBACK');
+    try {
+        return await sequelize.transaction(fn);
+    } catch (error) {
         console.error('Database Transaction failed');
         throw error;
-    })
-    await pool.query('COMMIT');
+    }
 }

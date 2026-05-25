@@ -1,6 +1,9 @@
 # media folders
 media/
 
+# stubborn db folder
+/db/
+
 # Logs
 logs
 *.log
