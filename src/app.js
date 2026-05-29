@@ -22,7 +22,7 @@ app.use((err, req, res, next) => {
     next(err);
 });
 
-// error handler
+// api error handler
 app.use((err, req, res, next) => {
 
     if (!err.statusCode) {
