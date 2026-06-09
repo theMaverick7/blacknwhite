@@ -37,5 +37,17 @@ services:
       timeout: 3s
       retries: 3
 
+  textract:
+    build:
+      context: ./src/services/textract
+      dockerfile: Dockerfile
+    volumes:
+      - ./src/services/textract:/app
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: debug
+      PORT: 4001
+
 volumes:
   blacknwhite-data:

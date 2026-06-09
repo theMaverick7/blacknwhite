@@ -1,0 +1,16 @@
+{
+  "name": "textract",
+  "version": "1.0.0",
+  "description": "Textract service for parsing files.",
+  "license": "ISC",
+  "author": "theMaverick7",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node src/index.js"
+  },
+  "dependencies": {
+    "textract": "^2.5.0"
+  }
+}
