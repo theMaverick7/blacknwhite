@@ -1,16 +1,19 @@
 {
-  "name": "textract",
+  "name": "file_parser",
   "version": "1.0.0",
-  "description": "Textract service for parsing files.",
+  "description": "File parsing service.",
   "license": "ISC",
   "author": "theMaverick7",
   "type": "module",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node src/index.js"
+    "dev": "node index.js"
   },
   "dependencies": {
-    "textract": "^2.5.0"
+    "dotenv": "^17.4.2",
+    "pg-boss": "^12.18.2",
+    "file-type": "^22.0.1",
+    "read-chunk": "^5.0.0"
   }
 }

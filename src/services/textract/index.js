@@ -1,1 +1,0 @@
-console.log('Textract service is running');

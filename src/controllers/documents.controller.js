@@ -4,6 +4,8 @@ import { apiError } from "../utils/apiError.js";
 import { rename, unlink } from 'node:fs/promises';
 import { dbTransaction } from "../utils/dbTransaction.js";
 import Document from '../db/models/documents.model.js';
+import { createJob } from "../utils/job.js";
+import { QUEUES } from "../constants/QUEUES.js";
 
 export const Upload = asyncHandler(async (req, res) => {
     const { user_id } = req.params;
@@ -26,6 +28,8 @@ export const Upload = asyncHandler(async (req, res) => {
             user_id,
         })
     ));
+
+    await createJob(QUEUES.EXTRACT_TEXT, documents.map((doc) => doc.storage_path));
 
     res.status(200).json(new apiResponse(
         200,
