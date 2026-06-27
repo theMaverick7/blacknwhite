@@ -12,8 +12,15 @@
   },
   "dependencies": {
     "dotenv": "^17.4.2",
-    "pg-boss": "^12.18.2",
     "file-type": "^22.0.1",
-    "read-chunk": "^5.0.0"
+    "mammoth": "^1.12.0",
+    "node-poppler": "^9.1.2",
+    "node-tesseract-ocr": "^2.2.1",
+    "pdf-parse": "^2.4.5",
+    "pg-boss": "^12.18.2",
+    "read-chunk": "^5.0.0",
+    "sharp": "^0.35.1",
+    "unpdf": "^1.6.2",
+    "xlsx": "^0.18.5"
   }
 }

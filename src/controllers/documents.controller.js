@@ -29,7 +29,12 @@ export const Upload = asyncHandler(async (req, res) => {
         })
     ));
 
-    await createJob(QUEUES.EXTRACT_TEXT, documents.map((doc) => doc.storage_path));
+    await createJob(QUEUES.EXTRACT_TEXT, documents.map((doc) => {
+        return {
+            storage_path: doc.storage_path,
+            file_type: doc.file_type,
+        }
+    }));
 
     res.status(200).json(new apiResponse(
         200,
