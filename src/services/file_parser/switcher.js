@@ -13,27 +13,26 @@ async function switcher(filetype, path) {
                 console.log(`Processing PDF file: ${path}`);
                 const buffer = await readFile(path);
                 const parser = new PDFParse({ data: buffer });
-                const result = await parser.getText();
+                let text = (await parser.getText()).text;
 
-                if(result.pages[0].text.length === 0) {
+                if (text.length <= 20) {
                     console.log(`PDF file is empty or unreadable: ${path}`);
                     await extractPdfImages(path);
                     const buffer = await readFile(`media/uploads/image-1.png`);
                     const enhancedImageBuffer = await enhanceImage(buffer);
-                    await parser.destroy();
-                    return await tesseract.recognize(enhancedImageBuffer, {
+                    text = await tesseract.recognize(enhancedImageBuffer, {
                         lang: "eng",
                         oem: 1,
                         psm: 3,
                     });
-                }else {
-                    await parser.destroy();
-                    return result;
                 }
+
+                await parser.destroy();
+                return text;
 
             case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
                 console.log(`Processing DOCX file: ${path}`);
-                return await mammoth.extractRawText({ path: path });
+                return (await mammoth.extractRawText({ path: path })).value;
 
             case 'image/jpeg':
             case 'image/png':

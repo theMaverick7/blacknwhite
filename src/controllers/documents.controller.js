@@ -29,13 +29,15 @@ export const Upload = asyncHandler(async (req, res) => {
         })
     ));
 
-    await createJob(QUEUES.EXTRACT_TEXT, documents.map((doc) => {
-        return {
+    await Promise.all(documents.map(async (doc) => {
+        await createJob(QUEUES.EXTRACT_TEXT, [{
+            doc_id: doc.doc_id,
             storage_path: doc.storage_path,
             file_type: doc.file_type,
-        }
+        }]);
     }));
 
+    
     res.status(200).json(new apiResponse(
         200,
         documents.map(doc => ({

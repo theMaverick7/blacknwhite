@@ -11,6 +11,7 @@ services:
     volumes:
       - uploads:/app/media/uploads
       - .:/app
+      - /app/src/services
     env_file: ".env"
       
 
@@ -27,7 +28,7 @@ services:
 
   file_parser:
     build:
-      context: ./src/services/file_parser
+      context: src/services/file_parser
       dockerfile: Dockerfile
     volumes:
       - uploads:/app/media/uploads
