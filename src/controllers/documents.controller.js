@@ -3,7 +3,7 @@ import { apiResponse } from "../utils/apiResponse.js";
 import { apiError } from "../utils/apiError.js";
 import { rename, unlink } from 'node:fs/promises';
 import { dbTransaction } from "../utils/dbTransaction.js";
-import { DocumentRepository } from "../repositories/index.js";
+import { DocumentRepository, TextExtractionRepository } from "../repositories/index.js";
 import { createJob } from "../utils/job.js";
 import { QUEUES } from "../constants/QUEUES.js";
 
@@ -123,4 +123,11 @@ export const deleteDocument = asyncHandler(async (req, res) => {
 
     await unlink(storagePath);
     res.status(200).json(new apiResponse(200, null, 'Document deleted successfully'));
+});
+
+export const searchDocuments = asyncHandler(async (req, res) => {
+    const { q, limit, offset } = req.query;
+    const results = await TextExtractionRepository.searchDocuments(q, { limit, offset });
+
+    res.status(200).json(new apiResponse(200, results, 'Search completed successfully'));
 });
