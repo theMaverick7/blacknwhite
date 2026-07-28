@@ -11,16 +11,20 @@ export async function registerResultsWorker() {
       text: job.data.extractedText,
     });
 
+    const textId = textExtraction.dataValues.id;
+
     await DocumentRepository.update(
-      { status: 'processed', textId: textExtraction.dataValues.id },
+      { status: 'processed', textId: textId },
       { doc_id: job.data.doc_id }
     );
   });
 
-  process.on('SIGINT', async () => {
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
+
+  async function shutdown() {
     console.log('Shutting down workers...');
     await boss.stop();
     process.exit(0);
-  });
-
+  }
 }

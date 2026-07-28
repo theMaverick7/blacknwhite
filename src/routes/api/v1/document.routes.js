@@ -11,6 +11,9 @@ router.post('/upload', upload.array('file(s)'), documentController.Upload);
 // List all files for a user
 router.get('/list', documentController.List);
 
+// Search documents for a user
+router.get('/search', documentController.searchDocuments);
+
 // List a specific file for a user
 router.get('/:id', documentController.ListbyId);
 
