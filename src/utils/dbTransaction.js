@@ -5,7 +5,7 @@ export const dbTransaction = async (fn) => {
     try {
         return await sequelize.transaction(fn);
     } catch (error) {
-        console.error('Database Transaction failed');
+        console.error('Database Transaction failed:', error.message);
         throw error;
     }
 }

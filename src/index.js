@@ -1,6 +1,9 @@
 import dotenv from 'dotenv';
 import app from './app.js';
 import { checkDBConnection } from './db/index.js';
+import { registerResultsWorker } from './workers/fileParserWorker.js';
+import boss from './utils/boss.js';
+import { QUEUES } from './constants/QUEUES.js';
 
 // load environment variables
 dotenv.config();
@@ -32,4 +35,9 @@ const startServer = async() => {
     }
 }
 
-await startServer();
+await startServer().then(async() => {
+    await boss.start();
+    await boss.createQueue(QUEUES.GET_TEXT);
+    await registerResultsWorker();
+    console.log('Workers started. Waiting for jobs...');
+});

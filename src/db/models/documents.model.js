@@ -39,6 +39,15 @@ Document.init(
             type: DataTypes.UUID,
             allowNull: false,
         },
+        textId: {
+            type: DataTypes.UUID,
+            allowNull: true,
+            references: {
+                model: 'text_extractions',
+                key: 'id',
+            },
+            onDelete: 'CASCADE',
+        },
     },
     {
         sequelize,
