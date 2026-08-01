@@ -38,6 +38,8 @@ export const Upload = asyncHandler(async (req, res) => {
     }));
 
 
+    req.log.info(`Documents uploaded for user_id: ${user_id}, files: ${documents.map(doc => doc.file_name).join(', ')}`);
+
     res.status(200).json(new apiResponse(
         200,
         documents.map(doc => ({
@@ -63,6 +65,8 @@ export const List = asyncHandler(async (req, res) => {
         return res.status(200).json(new apiResponse(200, null, 'No documents found'));
     }
 
+    req.log.info(`Documents retrieved for user_id: ${user_id}, count: ${documents.length}`);
+
     res.status(200).json(new apiResponse(200, documents.map(doc => ({
         filename: doc.file_name,
         filetype: doc.file_type,
@@ -75,6 +79,8 @@ export const ListbyId = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const document = await DocumentRepository.findById(id);
     if (!document) throw new apiError(404, 'Document not found');
+
+    req.log.info(`Document retrieved: ${document.file_name} for doc_id: ${id}`);
 
     res.status(200).json(new apiResponse(200, {
         filename: document.file_name,
@@ -103,6 +109,8 @@ export const renameDocument = asyncHandler(async (req, res) => {
         await DocumentRepository.update({ file_name: updatedName, storage_path: updatedStoragePath }, { doc_id: document.doc_id }, { transaction: t });
     });
 
+    req.log.info(`Document renamed from ${document.file_name} to ${updatedName} for doc_id: ${id}`);
+
     res.status(200).json(new apiResponse(200, null, 'Document renamed successfully'));
 });
 
@@ -122,12 +130,15 @@ export const deleteDocument = asyncHandler(async (req, res) => {
     });
 
     await unlink(storagePath);
+    req.log.info(`Document deleted: ${document.file_name}`);
     res.status(200).json(new apiResponse(200, null, 'Document deleted successfully'));
 });
 
 export const searchDocuments = asyncHandler(async (req, res) => {
     const { q, limit, offset } = req.query;
     const results = await TextExtractionRepository.searchDocuments(q, { limit, offset });
+
+    req.log.info(`Search performed with query: "${q}", results found: ${results.length}`);
 
     res.status(200).json(new apiResponse(200, results, 'Search completed successfully'));
 });

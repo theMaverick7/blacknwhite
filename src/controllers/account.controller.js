@@ -15,6 +15,8 @@ export const Create = asyncHandler(async (req, res) => {
     const hashedPassword = await hashPassword(password);
     const account = await AccountRepository.create({ username, email, password_hash: hashedPassword });
 
+    req.log.info(`Account created: ${account.username}`);
+
     res.status(201).json(new apiResponse(
         201,
         {
@@ -30,6 +32,8 @@ export const GetById = asyncHandler(async (req, res) => {
     const { account_id } = req.params;
     const account = await AccountRepository.findById(account_id);
     if (!account) throw new apiError(404, 'Account not found');
+
+    req.log.info(`Account retrieved: ${account.username}`);
 
     res.status(200).json(new apiResponse(
         200,
@@ -59,6 +63,8 @@ export const updatePassword = asyncHandler(async (req, res) => {
         await AccountRepository.update({ password_hash: await hashPassword(newPassword) }, { account_id }, { transaction: t });
     });
 
+    req.log.info(`Password updated for account: ${account.username}`);
+
     res.status(200).json(new apiResponse(200, null, 'Password changed successfully'));
 });
 
@@ -69,6 +75,8 @@ export const updateEmail = asyncHandler(async (req, res) => {
     const rows = await AccountRepository.update({ email: newEmail }, { account_id });
     if (rows.length === 0) throw new apiError(404, 'Account not found');
 
+    req.log.info(`Email updated for account: ${account.username}`);
+
     res.status(200).json(new apiResponse(200, null, 'Email updated successfully'));
 });
 
@@ -78,6 +86,8 @@ export const updateUsername = asyncHandler(async (req, res) => {
 
     const rows = await AccountRepository.update({ username: newUsername }, { account_id });
     if (rows.length === 0) throw new apiError(404, 'Account not found');
+
+    req.log.info(`Username updated for account: ${account.username}`);
 
     res.status(200).json(new apiResponse(200, null, 'Username updated successfully'));
 });
@@ -99,6 +109,8 @@ export const Delete = asyncHandler(async (req, res) => {
     await Promise.all(storagePaths.map(p => unlink(p).catch(() => {
         console.error(`Failed to delete file at ${p}`);
     })));
+
+    logger.info(`Account deleted: ${account.username}`);
 
     res.status(200).json(new apiResponse(200, null, 'Account deleted successfully'));
 });

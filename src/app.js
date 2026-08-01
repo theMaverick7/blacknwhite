@@ -1,6 +1,8 @@
 import express from "express";
 import apiv1Router from './routes/api/v1/index.js';
 import cors from 'cors';
+import logger from './utils/logger.js';
+import pinoHttp from 'pino-http';
 
 const app = express();
 
@@ -13,12 +15,15 @@ app.use(express.urlencoded({ extended: true }));
 // Parse JSON bodies (as sent by API clients)
 app.use(express.json());
 
+// pino http logger
+app.use(pinoHttp({ logger }));
+
 // API v1
 app.use('/api/v1', apiv1Router);
 
 // log errors
 app.use((err, req, res, next) => {
-    console.error(err.stack);
+    req.log.error(err);
     next(err);
 });
 
