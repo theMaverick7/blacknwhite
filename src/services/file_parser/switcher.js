@@ -5,18 +5,19 @@ import tesseract from 'node-tesseract-ocr';
 import { enhanceImage } from './enhance.js';
 import { readFile } from 'node:fs/promises';
 import { extractPdfImages } from './extractFromPdf.js';
+import logger from './logger.js';
 
 async function switcher(filetype, path) {
     try {
         switch (filetype.mime) {
             case 'application/pdf':
-                console.log(`Processing PDF file: ${path}`);
+                logger.info(`Processing PDF file: ${path}`);
                 const buffer = await readFile(path);
                 const parser = new PDFParse({ data: buffer });
                 let text = (await parser.getText()).text;
 
                 if (text.length <= 20) {
-                    console.log(`PDF file is empty or unreadable: ${path}`);
+                    logger.info(`PDF file is empty or unreadable: ${path}`);
                     await extractPdfImages(path);
                     const buffer = await readFile(`media/uploads/image-1.png`);
                     const enhancedImageBuffer = await enhanceImage(buffer);
@@ -31,13 +32,13 @@ async function switcher(filetype, path) {
                 return text;
 
             case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-                console.log(`Processing DOCX file: ${path}`);
+                logger.info(`Processing DOCX file: ${path}`);
                 return (await mammoth.extractRawText({ path: path })).value;
 
             case 'image/jpeg':
             case 'image/png':
                 const enhancedImageBuffer = await enhanceImage(path);
-                console.log(`Processing image file: ${path}`);
+                logger.info(`Processing image file: ${path}`);
                 return await tesseract.recognize(enhancedImageBuffer, {
                     lang: "eng",
                     oem: 1,
@@ -49,7 +50,7 @@ async function switcher(filetype, path) {
         }
 
     } catch (err) {
-        console.error(`Error processing file ${path}:`, err);
+        logger.error(`Error processing file ${path}:`, err);
     }
 }
 

@@ -110,7 +110,7 @@ export const Delete = asyncHandler(async (req, res) => {
         console.error(`Failed to delete file at ${p}`);
     })));
 
-    logger.info(`Account deleted: ${account.username}`);
+    req.log.info(`Account deleted: ${account.username}`);
 
     res.status(200).json(new apiResponse(200, null, 'Account deleted successfully'));
 });

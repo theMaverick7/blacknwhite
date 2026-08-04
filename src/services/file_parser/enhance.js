@@ -1,4 +1,5 @@
 import sharp from "sharp";
+import logger from "./logger.js";
 
 export async function enhanceImage(imagePath) {
     try {
@@ -14,6 +15,6 @@ export async function enhanceImage(imagePath) {
             }).toBuffer();
 
     } catch (error) {
-        console.error(`Error enhancing image ${imagePath}:`, error);
+        logger.error(`Error enhancing image ${imagePath}:`, error.message);
     }
 }

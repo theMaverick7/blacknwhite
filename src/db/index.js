@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import { Sequelize } from 'sequelize';
+import logger from '../utils/logger.js';
 
 dotenv.config();
 
@@ -24,11 +25,11 @@ const sequelize = new Sequelize(
 export const checkDBConnection = async() => {
     try {
         await sequelize.authenticate();
-        console.log('Database connection has been established successfully.');
+        logger.info('Database connection has been established successfully.');
         await sequelize.sync();
-        console.log('Database & tables created!');
+        logger.info('Database synchronized successfully.');
     } catch (error) {
-        console.error('Unable to connect to the database:', error);
+        logger.error('Unable to connect to the database:', error.message);
     }
 }
 

@@ -6,7 +6,7 @@ import { readChunk } from 'read-chunk';
 import switcher from "./switcher.js";
 import { readFile } from 'node:fs/promises';
 import { response } from "./response.js";
-//import Document from '../../db/models/documents.model.js';
+import logger from "./logger.js";
 
 async function main() {
 
@@ -15,7 +15,14 @@ async function main() {
 
   await boss.work(QUEUES.EXTRACT_TEXT, async ([job]) => {
 
-    console.log(`received job ${job.id} with data ${JSON.stringify(job.data)}`);
+    const log = logger.child({
+      jobId: job.id,
+      requestId: job.data[0].request_id,
+      userId: job.data[0].user_id,
+      docId: job.data[0].doc_id
+    });
+
+    log.info(`Job received`);
 
     let text;
 
@@ -31,28 +38,26 @@ async function main() {
 
     }
 
+    log.info('Text extraction completed, sending results to GET_TEXT queue');
+
     await boss.send(QUEUES.GET_TEXT, {
+      jobId: job.id,
+      requestId: job.data[0].request_id,
+      userId: job.data[0].user_id,
+      docId: job.data[0].doc_id,
       status: 'success',
-      doc_id: job.data[0].doc_id,
       extractedText: text,
     });
-
-    // await Document.update({ status: 'processed' }, {
-    //   where: {
-    //     doc_id: job.data[0].doc_id
-    //   }
-    // });
-
   });
 
-  console.log('Workers started. Waiting for jobs...');
+  logger.info('Workers started. Waiting for jobs...');
 
   // Keep the process alive
   process.on('SIGINT', async () => {
-    console.log('Shutting down workers...');
+    logger.flush('Shutting down workers...');
     await boss.stop();
     process.exit(0);
   });
 }
 
-main().catch(console.error);
+main().catch(logger.error);

@@ -2,11 +2,21 @@ import boss from '../utils/boss.js';
 import Document from '../db/models/documents.model.js';
 import { QUEUES } from "../constants/QUEUES.js";
 import { TextExtractionRepository, DocumentRepository } from "../repositories/index.js";
-
+import logger from '../utils/logger.js';
 
 export async function registerResultsWorker() {
-  console.log('W in the chat')
+
   await boss.work(QUEUES.GET_TEXT, async ([job]) => {
+
+    const log = logger.child({
+      jobId: job.id,
+      requestId: job.data.requestId,
+      userId: job.data.userId,
+      docId: job.data.docId
+    });
+
+    log.info('Extracted text received, writing to database...');
+
     const textExtraction = await TextExtractionRepository.create({
       text: job.data.extractedText,
     });
@@ -15,16 +25,19 @@ export async function registerResultsWorker() {
 
     await DocumentRepository.update(
       { status: 'processed', textId: textId },
-      { doc_id: job.data.doc_id }
+      { doc_id: job.data.docId }
     );
+
+    log.info('Text written to database for doc_id');
+
   });
 
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
+  logger.info('Workers started. Waiting for jobs...');
 
-  async function shutdown() {
-    console.log('Shutting down workers...');
+  // Keep the process alive
+  process.on('SIGINT', async () => {
+    logger.flush('Shutting down workers...');
     await boss.stop();
     process.exit(0);
-  }
+  });
 }
