@@ -5,6 +5,7 @@ import { apiError } from '../utils/apiError.js';
 import { unlink } from 'node:fs/promises';
 import { dbTransaction } from '../utils/dbTransaction.js';
 import { AccountRepository, DocumentRepository } from "../repositories/index.js";
+import jwt from 'jsonwebtoken';
 
 export const Create = asyncHandler(async (req, res) => {
     const { username, email, password } = req.body;
@@ -26,6 +27,49 @@ export const Create = asyncHandler(async (req, res) => {
         },
         'Account created successfully'
     ));
+});
+
+export const login = asyncHandler(async (req, res) => {
+    const { username, password } = req.body;
+
+    const account = await AccountRepository.findOne({ username });
+    if (!account) throw new apiError(404, 'Account not found');
+
+    const isMatch = await comparePassword(password, account.password_hash);
+    if (!isMatch) throw new apiError(400, 'Incorrect password');
+
+    const token = jwt.sign({ account_id: account.account_id, username: account.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 3600000 // 1 hour
+    });
+
+    req.log.info(`Account logged in: ${account.username}`);
+
+    res.status(200).json(new apiResponse(
+        200,
+        {
+            username: account.username,
+            email: account.email,
+            created: account.created_at.toString()
+        },
+        'Login successful'
+    ));
+});
+
+export const logout = asyncHandler(async (req, res) => {
+    res.clearCookie('token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+    });
+
+    req.log.info(`Account logged out: ${req.user.username}`);
+
+    res.status(200).json(new apiResponse(200, null, 'Logout successful'));
 });
 
 export const GetById = asyncHandler(async (req, res) => {
@@ -61,9 +105,8 @@ export const updatePassword = asyncHandler(async (req, res) => {
         if (!isMatch) throw new apiError(400, 'Current password is incorrect');
 
         await AccountRepository.update({ password_hash: await hashPassword(newPassword) }, { account_id }, { transaction: t });
+        req.log.info(`Password updated for account: ${account.username}`);
     });
-
-    req.log.info(`Password updated for account: ${account.username}`);
 
     res.status(200).json(new apiResponse(200, null, 'Password changed successfully'));
 });
@@ -75,7 +118,7 @@ export const updateEmail = asyncHandler(async (req, res) => {
     const rows = await AccountRepository.update({ email: newEmail }, { account_id });
     if (rows.length === 0) throw new apiError(404, 'Account not found');
 
-    req.log.info(`Email updated for account: ${account.username}`);
+    req.log.info(`Email updated for account: ${rows[0].username}`);
 
     res.status(200).json(new apiResponse(200, null, 'Email updated successfully'));
 });
@@ -87,7 +130,7 @@ export const updateUsername = asyncHandler(async (req, res) => {
     const rows = await AccountRepository.update({ username: newUsername }, { account_id });
     if (rows.length === 0) throw new apiError(404, 'Account not found');
 
-    req.log.info(`Username updated for account: ${account.username}`);
+    req.log.info(`Username updated for account: ${rows[0].username}`);
 
     res.status(200).json(new apiResponse(200, null, 'Username updated successfully'));
 });

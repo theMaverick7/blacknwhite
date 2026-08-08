@@ -3,6 +3,7 @@ import apiv1Router from './routes/api/v1/index.js';
 import cors from 'cors';
 import logger from './utils/logger.js';
 import pinoHttp from 'pino-http';
+import cookieParser from 'cookie-parser';
 
 const app = express();
 
@@ -17,6 +18,9 @@ app.use(express.json());
 
 // pino http logger
 app.use(pinoHttp({ logger }));
+
+// cookie parser
+app.use(cookieParser());
 
 // API v1
 app.use('/api/v1', apiv1Router);
