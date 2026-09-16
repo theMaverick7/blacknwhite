@@ -14,8 +14,6 @@ afterAll(async () => {
     postgresContainer.stop();
 });
 
-
-
 describe('Account Routes', () => {
     jest.setTimeout(60000); // Set timeout to 30 seconds for this test suite
     describe('POST /api/v1/account/create', () => {
