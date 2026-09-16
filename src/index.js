@@ -5,6 +5,7 @@ import { registerResultsWorker } from './workers/fileParserWorker.js';
 import boss from './utils/boss.js';
 import { QUEUES } from './constants/QUEUES.js';
 import logger from './utils/logger.js';
+import sequelizeClient from './db/index.js';
 
 // load environment variables
 dotenv.config();
@@ -15,7 +16,7 @@ const PORT = process.env.PORT || 4000;
 // this function spin up the server.
 const startServer = async() => {
     try {
-        await checkDBConnection();
+        await checkDBConnection(sequelizeClient);
         app.listen(PORT, async () => {
             logger.info(`Server is running on port ${PORT}`);
             try {

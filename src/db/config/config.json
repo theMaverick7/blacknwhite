@@ -3,15 +3,15 @@
     "username": "postgres",
     "password": "admin",
     "database": "blacknwhite",
-    "host": "postgres",
+    "host": "127.0.0.1",
     "dialect": "postgres"
   },
   "test": {
-    "username": "root",
-    "password": null,
-    "database": "database_test",
+    "username": "testuser",
+    "password": "testpassword",
+    "database": "testdb",
     "host": "127.0.0.1",
-    "dialect": "mysql"
+    "dialect": "postgres"
   },
   "production": {
     "username": "root",
