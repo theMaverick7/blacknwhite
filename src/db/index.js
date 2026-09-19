@@ -14,7 +14,9 @@ if (process.env.NODE_ENV === 'test') {
         .withUsername(process.env.TEST_DB_USERNAME)
         .withPassword(process.env.TEST_DB_PSWD)
         .start();
-    sequelize = new Sequelize(postgresContainer.getConnectionUri());
+    sequelize = new Sequelize(postgresContainer.getConnectionUri(), {
+        logging: false,
+    });
 
 } else if (process.env.NODE_ENV === 'development') {
     sequelize = new Sequelize(

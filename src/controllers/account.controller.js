@@ -6,16 +6,27 @@ import { unlink } from 'node:fs/promises';
 import { dbTransaction } from '../utils/dbTransaction.js';
 import { AccountRepository, DocumentRepository } from "../repositories/index.js";
 import jwt from 'jsonwebtoken';
+import accountSchema from '../db/models/joiSchemas/account.schema.js';
 
 export const Create = asyncHandler(async (req, res) => {
     const { username, email, password } = req.body;
+    const {error, value: validatedData} = accountSchema.validate({ username, email, password });
 
-    const existing = await AccountRepository.findOne({ username });
+    if (error) {
+        console.log(error.details[0].message);
+        throw new apiError(400, error.details[0].message);
+    }
+
+    const existing = await AccountRepository.findOne({ username: validatedData.username });
     if (existing) throw new apiError(400, 'Username already exists');
 
-    const hashedPassword = await hashPassword(password);
-    const account = await AccountRepository.create({ username, email, password_hash: hashedPassword });
+    const hashedPassword = await hashPassword(validatedData.password);
 
+    const account = await AccountRepository.create({
+        username: validatedData.username,
+        email: validatedData.email,
+        password_hash: hashedPassword
+    });
     req.log.info(`Account created: ${account.username}`);
 
     res.status(201).json(new apiResponse(
