@@ -13,17 +13,16 @@ router.post('/login', accountController.login);
 // Logout
 router.post('/logout', authenticateToken, accountController.logout);
 
-router.route('/:account_id')
-    .get(authenticateToken, accountController.GetById)
-    .delete(authenticateToken, accountController.Delete);
+router.get('/', authenticateToken, accountController.GetById);
+router.delete('/', authenticateToken, accountController.Delete);
 
 // Change password
-router.patch('/:account_id/updatePassword', authenticateToken, accountController.updatePassword);
+router.patch('/updatePassword', authenticateToken, accountController.updatePassword);
 
 // change email
-router.patch('/:account_id/updateEmail', authenticateToken, accountController.updateEmail);
+router.patch('/updateEmail', authenticateToken, accountController.updateEmail);
 
 // change username
-router.patch('/:account_id/updateUsername', authenticateToken, accountController.updateUsername);
+router.patch('/updateUsername', authenticateToken, accountController.updateUsername);
 
 export default router;

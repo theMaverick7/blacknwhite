@@ -6,14 +6,20 @@ import { unlink } from 'node:fs/promises';
 import { dbTransaction } from '../utils/dbTransaction.js';
 import { AccountRepository, DocumentRepository } from "../repositories/index.js";
 import jwt from 'jsonwebtoken';
-import accountSchema from '../db/models/joiSchemas/account.schema.js';
+import {
+    baseAccountSchema,
+    loginSchema,
+    updateUsernameSchema,
+    updateEmailSchema,
+    updatePasswordSchema
+} from '../db/models/joiSchemas/account.schema.js';
+import uuidSchema from '../db/models/joiSchemas/uuid.schema.js';
 
 export const Create = asyncHandler(async (req, res) => {
     const { username, email, password } = req.body;
-    const {error, value: validatedData} = accountSchema.validate({ username, email, password });
+    const { error, value: validatedData } = baseAccountSchema.validate({ username, email, password });
 
     if (error) {
-        console.log(error.details[0].message);
         throw new apiError(400, error.details[0].message);
     }
 
@@ -43,10 +49,16 @@ export const Create = asyncHandler(async (req, res) => {
 export const login = asyncHandler(async (req, res) => {
     const { username, password } = req.body;
 
-    const account = await AccountRepository.findOne({ username });
+    const { error, value: validatedData } = loginSchema.validate({ username, password });
+
+    if (error) {
+        throw new apiError(400, error.details[0].message);
+    }
+
+    const account = await AccountRepository.findOne({ username: validatedData.username });
     if (!account) throw new apiError(404, 'Account not found');
 
-    const isMatch = await comparePassword(password, account.password_hash);
+    const isMatch = await comparePassword(validatedData.password, account.password_hash);
     if (!isMatch) throw new apiError(400, 'Incorrect password');
 
     const token = jwt.sign({ account_id: account.account_id, username: account.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
@@ -84,8 +96,16 @@ export const logout = asyncHandler(async (req, res) => {
 });
 
 export const GetById = asyncHandler(async (req, res) => {
-    const { account_id } = req.params;
-    const account = await AccountRepository.findById(account_id);
+    const { account_id } = req.user;
+
+    const { error, value: id } = uuidSchema.validate(account_id);
+
+    if (error) {
+        console.log(error.details[0].message);
+        throw new apiError(400, error.details[0].message);
+    }
+
+    const account = await AccountRepository.findById(id);
     if (!account) throw new apiError(404, 'Account not found');
 
     req.log.info(`Account retrieved: ${account.username}`);
@@ -102,8 +122,14 @@ export const GetById = asyncHandler(async (req, res) => {
 });
 
 export const updatePassword = asyncHandler(async (req, res) => {
-    const { account_id } = req.params;
+    const { account_id } = req.user;
     const { currentPassword, newPassword } = req.body;
+
+    const { error, value: validatedData } = updatePasswordSchema.validate({ currentPassword, newPassword });
+
+    if (error) {
+        throw new apiError(400, error.details[0].message);
+    }
 
     await dbTransaction(async (t) => {
         const account = await AccountRepository.findById(account_id, {
@@ -112,10 +138,10 @@ export const updatePassword = asyncHandler(async (req, res) => {
         });
         if (!account) throw new apiError(404, 'Account not found');
 
-        const isMatch = await comparePassword(currentPassword, account.password_hash);
+        const isMatch = await comparePassword(validatedData.currentPassword, account.password_hash);
         if (!isMatch) throw new apiError(400, 'Current password is incorrect');
 
-        await AccountRepository.update({ password_hash: await hashPassword(newPassword) }, { account_id }, { transaction: t });
+        await AccountRepository.update({ password_hash: await hashPassword(validatedData.newPassword) }, { account_id }, { transaction: t });
         req.log.info(`Password updated for account: ${account.username}`);
     });
 
@@ -123,31 +149,45 @@ export const updatePassword = asyncHandler(async (req, res) => {
 });
 
 export const updateEmail = asyncHandler(async (req, res) => {
-    const { account_id } = req.params;
-    const { newEmail } = req.body;
+    const { account_id } = req.user;
+    const { email } = req.body;
 
-    const rows = await AccountRepository.update({ email: newEmail }, { account_id });
+    const { error, value: validatedData } = updateEmailSchema.validate({email});
+
+    if (error) {
+        throw new apiError(400, error.details[0].message);
+    }
+
+    const rows = await AccountRepository.update({ email: validatedData.email }, { account_id });
     if (rows.length === 0) throw new apiError(404, 'Account not found');
 
-    req.log.info(`Email updated for account: ${rows[0].username}`);
+    console.log(rows);
+
+    req.log.info(`Email updated for account: ${req.user.username}`);
 
     res.status(200).json(new apiResponse(200, null, 'Email updated successfully'));
 });
 
 export const updateUsername = asyncHandler(async (req, res) => {
-    const { account_id } = req.params;
-    const { newUsername } = req.body;
+    const { account_id } = req.user;
+    const { username } = req.body;
 
-    const rows = await AccountRepository.update({ username: newUsername }, { account_id });
+    const { error, value: validatedData } = updateUsernameSchema.validate({ username });
+
+    if (error) {
+        throw new apiError(400, error.details[0].message);
+    }
+
+    const rows = await AccountRepository.update({ username: validatedData.username }, { account_id });
     if (rows.length === 0) throw new apiError(404, 'Account not found');
 
-    req.log.info(`Username updated for account: ${rows[0].username}`);
+    req.log.info(`Username updated for account: ${req.user.username}`);
 
     res.status(200).json(new apiResponse(200, null, 'Username updated successfully'));
 });
 
 export const Delete = asyncHandler(async (req, res) => {
-    const { account_id } = req.params;
+    const { account_id } = req.user;
 
     const storagePaths = await dbTransaction(async (t) => {
         const account = await AccountRepository.findById(account_id, { transaction: t });
@@ -164,7 +204,7 @@ export const Delete = asyncHandler(async (req, res) => {
         console.error(`Failed to delete file at ${p}`);
     })));
 
-    req.log.info(`Account deleted: ${account.username}`);
+    req.log.info(`Account deleted: ${req.user.username}`);
 
     res.status(200).json(new apiResponse(200, null, 'Account deleted successfully'));
 });
